@@ -3,7 +3,7 @@ package pg
 import (
 	"context"
 
-	"github.com/gavrylenkoIvan/clf/domain"
+	"github.com/clfdrive/server/domain"
 	"github.com/jackc/pgx"
 )
 

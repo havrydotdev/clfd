@@ -1,4 +1,4 @@
-module github.com/gavrylenkoIvan/clf
+module github.com/clfdrive/server
 
 go 1.21.6
 

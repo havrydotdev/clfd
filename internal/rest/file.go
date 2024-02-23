@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gavrylenkoIvan/clf/domain"
+	"github.com/clfdrive/server/domain"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )

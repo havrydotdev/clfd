@@ -3,7 +3,7 @@ package file
 import (
 	"context"
 
-	"github.com/gavrylenkoIvan/clf/domain"
+	"github.com/clfdrive/server/domain"
 )
 
 type FileRepository interface {
