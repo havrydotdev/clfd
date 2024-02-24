@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"crypto/rand"
 	"io"
 	"log"
 	"mime/multipart"
@@ -12,8 +13,9 @@ import (
 
 var (
 	currDir, _ = os.Getwd()
-
 	driveDir = path.Join(currDir, "drive")
+
+	table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 )
 
 func ErrorResp(code int, err error) *echo.HTTPError {
@@ -42,4 +44,18 @@ func SaveFile(file *multipart.FileHeader, fileName string) (string, error) {
 	}
 
 	return loc, nil
+}
+
+func GenVerifCode() string {
+	b := make([]byte, 6)
+    n, err := io.ReadAtLeast(rand.Reader, b, 6)
+    if n != 6 {
+        panic(err)
+    }
+
+    for i := 0; i < len(b); i++ {
+        b[i] = table[int(b[i])%len(table)]
+    }
+	
+    return string(b)
 }
