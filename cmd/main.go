@@ -11,10 +11,10 @@ import (
 	"github.com/clfdrive/server/file"
 	"github.com/clfdrive/server/internal/repository/pg"
 	"github.com/clfdrive/server/internal/rest"
-	"github.com/clfdrive/server/internal/rest/middleware"
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 var (
@@ -48,8 +48,11 @@ func main() {
 
 	srv := echo.New()
 
-	srv.Use(middleware.SetRequestContextWithTimeout(time.Duration(*timeout) * time.Second))
-	srv.Use(middleware.CORS)
+	srv.Use(middleware.ContextTimeout(time.Duration(*timeout) * time.Second))
+	srv.Use(middleware.CORS())
+	srv.Use(middleware.Logger())
+	srv.Use(middleware.Secure())
+	srv.Use(middleware.Recover())
 
 	fileRepo := pg.NewFileRepository(conn)
 
@@ -57,5 +60,5 @@ func main() {
 
 	rest.NewFileHandler(srv, fileSvc)
 
-	log.Fatal(srv.Start(fmt.Sprintf(":%d", *port)))
+	srv.Logger.Fatal(srv.Start(fmt.Sprintf(":%d", *port)))
 }

@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	insertQuery = "INSERT INTO files (name, location) VALUES ($1, $2) RETURNING id"
+	insertQuery = "INSERT INTO files (name, location) VALUES ($1, $2) RETURNING id, created_at, updated_at"
 )
 
 type FileRepository struct {
@@ -23,7 +23,7 @@ func NewFileRepository(conn *pgx.Conn) *FileRepository {
 
 func (repo *FileRepository) Create(ctx context.Context, file *domain.File) (err error) {
 	row := repo.conn.QueryRow(ctx, insertQuery, file.Name, file.Location)
-	if err = row.Scan(&file.ID); err != nil {
+	if err = row.Scan(&file.ID, &file.CreatedAt, &file.UpdatedAt); err != nil {
 		return
 	}
 
