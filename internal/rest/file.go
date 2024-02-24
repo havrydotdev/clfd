@@ -32,13 +32,24 @@ func NewFileHandler(srv *echo.Echo, svc FileService) {
 		Service: svc,
 	}
 
-	// srv.POST("/file", handler.)
+	srv.POST("/file", handler.Create)
 }
 
 func (h *FileHandler) Create(c echo.Context) error {
-	var file domain.File
-	if err := c.Bind(&file); err != nil {
+	upload, err := c.FormFile("file")
+	if err != nil {
 		return ErrorResp(http.StatusBadRequest, err)
+	}
+
+	fileName := c.FormValue("name")
+	loc, err := SaveFile(upload, fileName)
+	if err != nil {
+		return ErrorResp(http.StatusBadRequest, err)
+	}
+
+	file := domain.File{
+		Name: fileName,
+		Location: loc,
 	}
 
 	if ok, err := isRequestValid(&file); !ok {
