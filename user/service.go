@@ -12,7 +12,7 @@ import (
 type UserRepository interface {
 	Create(ctx context.Context, user *domain.User) error
 	FindByEmail(ctx context.Context, email string) (domain.User, error)
-	Update(ctx context.Context, userId int, user *domain.User) error
+	Update(ctx context.Context, userId int, user *domain.UpdateUserDTO) error
 }
 
 type Service struct {
@@ -47,8 +47,10 @@ func (s *Service) Verify(ctx context.Context, email string, verifCode string) er
 		return errors.New("invalid verification code")
 	}
 
-	if err := s.userRepo.Update(ctx, user.ID, &domain.User{
-		Verified: true,
+	verified := true
+	
+	if err := s.userRepo.Update(ctx, user.ID, &domain.UpdateUserDTO{
+		Verified: &verified,
 	}); err != nil {
 		return err
 	}
@@ -56,7 +58,7 @@ func (s *Service) Verify(ctx context.Context, email string, verifCode string) er
 	return nil
 }
 
-func (s *Service) Login(ctx context.Context, email string, password string) error {
+func (s *Service) SignIn(ctx context.Context, email string, password string) error {
 	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		return err
@@ -70,8 +72,8 @@ func (s *Service) Login(ctx context.Context, email string, password string) erro
 }
 
 func (s *Service) UpdateRefreshToken(ctx context.Context, userId int, refreshToken string) error {
-	return s.userRepo.Update(ctx, userId, &domain.User{
-		RefreshToken: refreshToken,
+	return s.userRepo.Update(ctx, userId, &domain.UpdateUserDTO{
+		RefreshToken: &refreshToken,
 	})
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/clfdrive/server/domain"
+	"github.com/clfdrive/server/internal/rest"
 )
 
 type FileRepository interface {
@@ -14,7 +15,7 @@ type Service struct {
 	fileRepo FileRepository
 }
 
-func NewService(fileRepo FileRepository) *Service {
+func NewService(fileRepo FileRepository) rest.FileService {
 	return &Service{
 		fileRepo,
 	}

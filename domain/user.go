@@ -8,3 +8,8 @@ type User struct {
 	VerifCode string `json:"verif_code"`
 	RefreshToken string `json:"refresh_token"`
 }
+
+type UpdateUserDTO struct {
+	RefreshToken *string `json:"refresh_token"`
+	Verified *bool `json:"verified"`
+}

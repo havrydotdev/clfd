@@ -11,7 +11,7 @@ import (
 type UserService interface {
 	Create(ctx context.Context, user *domain.User) error
 	Verify(ctx context.Context, email string, verifCode string) error
-	Login(ctx context.Context, email string, password string) error
+	SignIn(ctx context.Context, email string, password string) error
 	UpdateRefreshToken(ctx context.Context, userId int, refreshToken string) error 
 }
 
@@ -25,6 +25,10 @@ func NewUserHandler(srv *echo.Echo, svc UserService) {
 	}
 
 	srv.POST("/sign-up", handler.SignUp)
+	srv.POST("/verify/:code", handler.Verify)
+
+	// srv.GET("/sign-in", handler.SignIn)
+	// srv.GET("/refresh", handler.Refresh)
 }
 
 func (h *UserHandler) SignUp(c echo.Context) error {
@@ -34,8 +38,7 @@ func (h *UserHandler) SignUp(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	err := h.Service.Create(ctx, &input)
-	if err != nil {
+	if err := h.Service.Create(ctx, &input); err != nil {
 		return ErrorResp(http.StatusInternalServerError, err)
 	}
 
@@ -44,3 +47,25 @@ func (h *UserHandler) SignUp(c echo.Context) error {
 		"email": input.Email,
 	})
 }
+
+func (h *UserHandler) Verify(c echo.Context) error {
+	email := c.QueryParam("email")
+	verifCode := c.Param("code")
+
+	ctx := c.Request().Context()
+	if err := h.Service.Verify(ctx, email, verifCode); err != nil {
+		return ErrorResp(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"ok": true,
+	})
+}
+
+// func (h *UserHandler) SignIn(c echo.Context) error {
+
+// }
+
+// func (h *UserHandler) Refresh(c echo.Context) error {
+	
+// }

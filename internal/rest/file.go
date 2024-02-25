@@ -31,13 +31,15 @@ func isRequestValid(m *domain.File) (bool, error) {
 	return true, nil
 }
 
-func NewFileHandler(srv *echo.Echo, svc FileService) {
+func NewFileHandler(srv *echo.Echo, svc FileService) *echo.Echo {
 	handler := &FileHandler{
 		Service: svc,
 	}
 
 	srv.POST("/file", handler.Create)
 	srv.GET("/file/:fileName", handler.Download)
+
+	return srv
 }
 
 func (h *FileHandler) Create(c echo.Context) error {
