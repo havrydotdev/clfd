@@ -2,7 +2,7 @@
 .env
 
 # air
-tmp
+.tmp
 
 # static files
-drive
+.drive

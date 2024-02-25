@@ -3,32 +3,20 @@ package rest
 import (
 	"context"
 	"fmt"
+	"mime/multipart"
 	"net/http"
-	"path"
-	"strings"
 
 	"github.com/clfdrive/server/domain"
-	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
 type FileService interface {
-	Create(ctx context.Context, file *domain.File) error
+	Create(ctx context.Context, file *multipart.FileHeader, fileName, url string) (domain.File, error)
+	GetFileName(ctx context.Context, fileName string) string
 }
 
 type FileHandler struct {
 	Service FileService
-}
-
-func isRequestValid(m *domain.File) (bool, error) {
-	validate := validator.New()
-	err := validate.Struct(m)
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
 }
 
 func NewFileHandler(srv *echo.Echo, svc FileService) *echo.Echo {
@@ -49,33 +37,15 @@ func (h *FileHandler) Create(c echo.Context) error {
 	}
 
 	fileName := c.FormValue("name")
-	if fileName == "" {
-		parts := strings.Split(upload.Filename, ".")
-
-		fileName = fmt.Sprintf("%s.%s", uuid.NewString(), parts[len(parts) - 1])
-	}
-	
-	_, err = SaveFile(upload, fileName)
-	if err != nil {
-		return ErrorResp(http.StatusBadRequest, err)
-	}
 
 	prefix := "http"
 	if c.IsTLS() {
 		prefix = "https"
 	}
 
-	file := domain.File{
-		Name: fileName,
-		Location: fmt.Sprintf("%s://%s/file/%s", prefix, c.Request().Host, fileName),
-	}
-
-	if ok, err := isRequestValid(&file); !ok {
-		return ErrorResp(http.StatusBadRequest, err)
-	}
-
 	ctx := c.Request().Context()
-	if err := h.Service.Create(ctx, &file); err != nil {
+	file, err := h.Service.Create(ctx, upload, fileName, fmt.Sprintf("%s://%s", prefix, c.Request().Host))
+	if err != nil {
 		return ErrorResp(http.StatusInternalServerError, err)
 	}
 
@@ -83,5 +53,7 @@ func (h *FileHandler) Create(c echo.Context) error {
 }
 
 func (h *FileHandler) Download(c echo.Context) error {
-	return c.File(path.Join(driveDir, c.Param("fileName")))
+	ctx := c.Request().Context()
+
+	return c.File(h.Service.GetFileName(ctx, c.Param("fileName")))
 }
