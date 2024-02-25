@@ -30,12 +30,12 @@ func init() {
 func main() {
 	fx.New(
 		fx.Provide(
-			repository.NewConn,
 			func() *echo.Echo {
 				srv := echo.New()
 
 				return srv
 			},
+			repository.NewConn,
 			pg.NewFileRepository,
 			file.NewService,
 			pg.NewUserRepository,

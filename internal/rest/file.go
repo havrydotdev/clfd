@@ -11,8 +11,8 @@ import (
 )
 
 type FileService interface {
-	GetFileName(ctx context.Context, fileName string) string
-	Create(ctx context.Context, file *multipart.FileHeader, fileName, url string) (domain.File, error)
+	GetFileName(ctx context.Context, fileName string, userId int) string
+	Create(ctx context.Context, file *multipart.FileHeader, url string, userId int) (domain.File, error)
 }
 
 type FileHandler struct {
@@ -32,12 +32,11 @@ func NewFileHandler(srv *echo.Echo, fileSvc FileService, r *ProtectedRouter) *ec
 }
 
 func (h *FileHandler) Create(c echo.Context) error {
+	user := c.Get("user").(*domain.User)
 	upload, err := c.FormFile("file")
 	if err != nil {
 		return ErrorResp(http.StatusBadRequest, err)
 	}
-
-	fileName := c.FormValue("name")
 
 	prefix := "http"
 	if c.IsTLS() {
@@ -45,7 +44,12 @@ func (h *FileHandler) Create(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	file, err := h.Service.Create(ctx, upload, fileName, fmt.Sprintf("%s://%s", prefix, c.Request().Host))
+	file, err := h.Service.Create(
+		ctx,
+		upload,
+		fmt.Sprintf("%s://%s", prefix, c.Request().Host),
+		user.ID,
+	)
 	if err != nil {
 		return ErrorResp(http.StatusInternalServerError, err)
 	}
@@ -56,5 +60,11 @@ func (h *FileHandler) Create(c echo.Context) error {
 func (h *FileHandler) Download(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	return c.File(h.Service.GetFileName(ctx, c.Param("fileName")))
+	return c.File(
+		h.Service.GetFileName(
+			ctx,
+			c.Param("fileName"),
+			c.Get("user").(*domain.User).ID,
+		),
+	)
 }
