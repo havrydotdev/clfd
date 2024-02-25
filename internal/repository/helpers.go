@@ -34,4 +34,4 @@ func NewConn(lc fx.Lifecycle) *pgx.Conn {
 	})
 
 	return conn
-};
+}

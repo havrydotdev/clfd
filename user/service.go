@@ -5,13 +5,13 @@ import (
 	"errors"
 
 	"github.com/clfdrive/server/domain"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/clfdrive/server/internal/rest"
 )
 
 type UserRepository interface {
 	Create(ctx context.Context, user *domain.User) error
 	FindByEmail(ctx context.Context, email string) (domain.User, error)
+	FindByID(ctx context.Context, userId int) (domain.User, error)
 	Update(ctx context.Context, userId int, user *domain.UpdateUserDTO) error
 }
 
@@ -19,20 +19,25 @@ type Service struct {
 	userRepo UserRepository
 }
 
-func NewService(userRepo UserRepository) *Service {
+func NewService(userRepo UserRepository) rest.UserService {
 	return &Service{
 		userRepo,
 	}
 }
 
 func (s *Service) Create(ctx context.Context, user *domain.User) error {
-	hashed, err  := HashPassword(user.Password)
+	hashed, err := hashPassword(user.Password)
 	if err != nil {
 		return err
 	}
 
 	user.Password = hashed
-	user.VerifCode = uuid.NewString()
+	user.VerifCode = genVerifCode()
+
+	err = sendEmail(user.Email, user.VerifCode)
+	if err != nil {
+		return err
+	}
 
 	return s.userRepo.Create(ctx, user)
 }
@@ -44,11 +49,11 @@ func (s *Service) Verify(ctx context.Context, email string, verifCode string) er
 	}
 
 	if user.VerifCode != verifCode {
-		return errors.New("invalid verification code")
+		return errors.New("incorrect_verif_code")
 	}
 
 	verified := true
-	
+
 	if err := s.userRepo.Update(ctx, user.ID, &domain.UpdateUserDTO{
 		Verified: &verified,
 	}); err != nil {
@@ -58,31 +63,48 @@ func (s *Service) Verify(ctx context.Context, email string, verifCode string) er
 	return nil
 }
 
-func (s *Service) SignIn(ctx context.Context, email string, password string) error {
+func (s *Service) SignIn(ctx context.Context, email string, password string) (string, string, error) {
 	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
-	if !ComparePasswordHash(password, user.Password) {
-		return errors.New("incorrect password")
+	if !comparePasswordHash(password, user.Password) {
+		return "", "", errors.New("incorrect_password")
 	}
 
-	return nil
+	return s.genTokenPairAndUpdate(ctx, user.ID)
 }
 
-func (s *Service) UpdateRefreshToken(ctx context.Context, userId int, refreshToken string) error {
-	return s.userRepo.Update(ctx, userId, &domain.UpdateUserDTO{
+func (s *Service) Refresh(ctx context.Context, oldRefreshToken string) (string, string, error) {
+	userId, err := parseRefreshToken(oldRefreshToken)
+	if err != nil {
+		return "", "", err
+	}
+
+	user, err := s.userRepo.FindByID(ctx, userId)
+	if err != nil {
+		return "", "", err
+	}
+
+	if user.RefreshToken != oldRefreshToken {
+		return "", "", errors.New("incorrect_refresh_token")
+	}
+
+	return s.genTokenPairAndUpdate(ctx, userId)
+}
+
+func (s *Service) FindByID(ctx context.Context, userId int) (domain.User, error) {
+	return s.userRepo.FindByID(ctx, userId)
+}
+
+func (s *Service) genTokenPairAndUpdate(ctx context.Context, userId int) (string, string, error) {
+	accessToken, refreshToken, err := GenerateTokenPair(userId)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, s.userRepo.Update(ctx, userId, &domain.UpdateUserDTO{
 		RefreshToken: &refreshToken,
 	})
-}
-
-func HashPassword(password string) (string, error) {
-    bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-    return string(bytes), err
-}
-
-func ComparePasswordHash(password, hash string) bool {
-    err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-    return err == nil
 }

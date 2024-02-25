@@ -10,6 +10,7 @@ import (
 	"github.com/clfdrive/server/internal/repository/pg"
 	"github.com/clfdrive/server/internal/rest"
 	"github.com/clfdrive/server/internal/rest/middlewares"
+	"github.com/clfdrive/server/user"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
@@ -32,14 +33,19 @@ func main() {
 			repository.NewConn,
 			func() *echo.Echo {
 				srv := echo.New()
-				
+
 				return srv
 			},
 			pg.NewFileRepository,
-			file.NewService,		
+			file.NewService,
+			pg.NewUserRepository,
+			user.NewService,
+			rest.NewProtectedRouter,
+			rest.NewPublicRouter,
 		),
 		fx.Invoke(
 			rest.NewFileHandler,
+			rest.NewUserHandler,
 			func(srv *echo.Echo) {
 				srv.Logger.Fatal(srv.Start(fmt.Sprintf(":%d", *port)))
 			},

@@ -6,3 +6,6 @@
 
 # static files
 .drive
+
+# secrets
+secrets

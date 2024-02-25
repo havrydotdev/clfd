@@ -11,21 +11,22 @@ import (
 )
 
 type FileService interface {
-	Create(ctx context.Context, file *multipart.FileHeader, fileName, url string) (domain.File, error)
 	GetFileName(ctx context.Context, fileName string) string
+	Create(ctx context.Context, file *multipart.FileHeader, fileName, url string) (domain.File, error)
 }
 
 type FileHandler struct {
 	Service FileService
 }
 
-func NewFileHandler(srv *echo.Echo, svc FileService) *echo.Echo {
+func NewFileHandler(srv *echo.Echo, fileSvc FileService, r *ProtectedRouter) *echo.Echo {
 	handler := &FileHandler{
-		Service: svc,
+		Service: fileSvc,
 	}
 
-	srv.POST("/file", handler.Create)
-	srv.GET("/file/:fileName", handler.Download)
+	fileRouter := r.Group.Group("/file")
+	fileRouter.POST("", handler.Create)
+	fileRouter.GET("/:fileName", handler.Download)
 
 	return srv
 }

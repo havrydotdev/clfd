@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	insertUserQuery = "INSERT INTO users (email, password, verif_code) VALUES ($1, $2, $3) RETIRNING id"
-	findUserByEmailQuery = "SELECT * FROM users u WHERE u.email = $1"
+	insertUserQuery      = "INSERT INTO users (email, password, verif_code) VALUES ($1, $2, $3) RETURNING id"
+	findUserByEmailQuery = "SELECT id, email, password, refresh_token, verified, verif_code FROM users WHERE email = $1"
+	findUserByIdQuery    = "SELECT id, email, password, refresh_token, verified, verif_code FROM users WHERE id = $1"
 )
 
 type UserRepository struct {
@@ -37,7 +38,30 @@ func (repo UserRepository) Create(ctx context.Context, user *domain.User) (err e
 func (repo UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
 	var user domain.User
 	row := repo.conn.QueryRow(ctx, findUserByEmailQuery, email)
-	if err :=  row.Scan(&user); err != nil {
+	if err := row.Scan(
+		&user.ID,
+		&user.Email,
+		&user.Password,
+		&user.RefreshToken,
+		&user.Verified,
+		&user.VerifCode,
+	); err != nil {
+		return domain.User{}, err
+	}
+
+	return user, nil
+}
+
+func (repo UserRepository) FindByID(ctx context.Context, userId int) (domain.User, error) {
+	var user domain.User
+	row := repo.conn.QueryRow(ctx, findUserByIdQuery, userId)
+	if err := row.Scan(
+		&user.ID,
+		&user.Email,
+		&user.Password,
+		&user.RefreshToken,
+		&user.Verified,
+		&user.VerifCode); err != nil {
 		return domain.User{}, err
 	}
 
@@ -50,7 +74,7 @@ func (repo UserRepository) Update(ctx context.Context, userId int, user *domain.
 	argId := 1
 
 	if user.Verified != nil {
-		setValues = append(setValues, fmt.Sprintf("text=$%d", argId))
+		setValues = append(setValues, fmt.Sprintf("verified=$%d", argId))
 		args = append(args, *user.Verified)
 		argId++
 	}
@@ -67,7 +91,7 @@ func (repo UserRepository) Update(ctx context.Context, userId int, user *domain.
 	args = append(args, userId)
 
 	row := repo.conn.QueryRow(ctx, query, args...)
-	if err := row.Scan(); err != nil {
+	if err := row.Scan(); err != nil && err != pgx.ErrNoRows {
 		return err
 	}
 

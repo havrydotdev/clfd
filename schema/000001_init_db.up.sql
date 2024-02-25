@@ -4,9 +4,10 @@ CREATE TABLE users
 (
     id serial primary key,
     email varchar(128) not null unique,
-    refresh_token varchar(64) not null unique,
+    password varchar(128) not null,
+    refresh_token varchar(512) default '',
     verified bool not null default false,
-    verif_code varchar(64)
+    verif_code varchar(64) not null
 );
 
 CREATE TABLE files

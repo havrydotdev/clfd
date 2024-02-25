@@ -30,16 +30,16 @@ func (s *Service) Create(ctx context.Context, upload *multipart.FileHeader, file
 	if fileName == "" {
 		parts := strings.Split(upload.Filename, ".")
 
-		fileName = fmt.Sprintf("%s.%s", uuid.NewString(), parts[len(parts) - 1])
+		fileName = fmt.Sprintf("%s.%s", uuid.NewString(), parts[len(parts)-1])
 	}
-	
+
 	_, err := SaveFile(upload, fileName)
 	if err != nil {
 		return domain.File{}, err
 	}
 
 	file := domain.File{
-		Name: fileName,
+		Name:     fileName,
 		Location: fmt.Sprintf("%s/file/%s", url, fileName),
 	}
 

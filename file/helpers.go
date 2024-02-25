@@ -9,7 +9,7 @@ import (
 
 var (
 	currDir, _ = os.Getwd()
-	driveDir = path.Join(currDir, "drive")
+	driveDir   = path.Join(currDir, ".drive")
 )
 
 func SaveFile(file *multipart.FileHeader, fileName string) (string, error) {
