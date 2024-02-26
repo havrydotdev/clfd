@@ -12,3 +12,4 @@ secrets
 
 # executables
 bin
+dist/

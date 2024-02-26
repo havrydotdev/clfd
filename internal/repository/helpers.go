@@ -2,11 +2,16 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/fx"
+)
+
+var (
+	ErrNoRows = errors.New("does not exist")
 )
 
 func NewConn(lc fx.Lifecycle) *pgx.Conn {

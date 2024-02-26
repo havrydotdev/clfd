@@ -6,14 +6,17 @@ import (
 	"strings"
 
 	"github.com/clfdrive/server/domain"
+	"github.com/clfdrive/server/internal/repository"
 	"github.com/clfdrive/server/user"
 	"github.com/jackc/pgx/v5"
 )
 
+// TODO: refactor queries to use * instead of all fields
 const (
 	insertUserQuery      = "INSERT INTO users (email, password, verif_code) VALUES ($1, $2, $3) RETURNING id"
 	findUserByEmailQuery = "SELECT id, email, password, refresh_token, verified, verif_code FROM users WHERE email = $1"
 	findUserByIdQuery    = "SELECT id, email, password, refresh_token, verified, verif_code FROM users WHERE id = $1"
+	deleteUserQuery      = "DELETE FROM users WHERE id = $1"
 )
 
 type UserRepository struct {
@@ -36,36 +39,45 @@ func (repo UserRepository) Create(ctx context.Context, user *domain.User) (err e
 }
 
 func (repo UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
-	var user domain.User
+	var res domain.User
 	row := repo.conn.QueryRow(ctx, findUserByEmailQuery, email)
 	if err := row.Scan(
-		&user.ID,
-		&user.Email,
-		&user.Password,
-		&user.RefreshToken,
-		&user.Verified,
-		&user.VerifCode,
+		&res.ID,
+		&res.Email,
+		&res.Password,
+		&res.RefreshToken,
+		&res.Verified,
+		&res.VerifCode,
 	); err != nil {
+		if err == pgx.ErrNoRows {
+			return domain.User{}, repository.ErrNoRows
+		}
+
 		return domain.User{}, err
 	}
 
-	return user, nil
+	return res, nil
 }
 
 func (repo UserRepository) FindByID(ctx context.Context, userId int) (domain.User, error) {
-	var user domain.User
+	var res domain.User
 	row := repo.conn.QueryRow(ctx, findUserByIdQuery, userId)
 	if err := row.Scan(
-		&user.ID,
-		&user.Email,
-		&user.Password,
-		&user.RefreshToken,
-		&user.Verified,
-		&user.VerifCode); err != nil {
+		&res.ID,
+		&res.Email,
+		&res.Password,
+		&res.RefreshToken,
+		&res.Verified,
+		&res.VerifCode,
+	); err != nil {
+		if err == pgx.ErrNoRows {
+			return domain.User{}, repository.ErrNoRows
+		}
+
 		return domain.User{}, err
 	}
 
-	return user, nil
+	return res, nil
 }
 
 func (repo UserRepository) Update(ctx context.Context, userId int, user *domain.UpdateUserDTO) error {
@@ -92,6 +104,15 @@ func (repo UserRepository) Update(ctx context.Context, userId int, user *domain.
 
 	row := repo.conn.QueryRow(ctx, query, args...)
 	if err := row.Scan(); err != nil && err != pgx.ErrNoRows {
+		return err
+	}
+
+	return nil
+}
+
+func (repo UserRepository) Delete(ctx context.Context, userId int) error {
+	_, err := repo.conn.Exec(ctx, deleteUserQuery, userId)
+	if err != nil {
 		return err
 	}
 

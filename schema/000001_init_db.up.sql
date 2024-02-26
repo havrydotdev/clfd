@@ -16,7 +16,8 @@ CREATE TABLE files
     name varchar(128) not null unique,
     location varchar(256) not null unique,
     created_at date not null default NOW(),
-    updated_at date not null default NOW()
+    updated_at date not null default NOW(),
+    user_id int references users (id) on delete cascade
 );
 
 COMMIT;

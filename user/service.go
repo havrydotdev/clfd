@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/clfdrive/server/domain"
+	"github.com/clfdrive/server/internal/repository"
 	"github.com/clfdrive/server/internal/rest"
 )
 
@@ -13,6 +14,7 @@ type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (domain.User, error)
 	FindByID(ctx context.Context, userId int) (domain.User, error)
 	Update(ctx context.Context, userId int, user *domain.UpdateUserDTO) error
+	Delete(ctx context.Context, userId int) error
 }
 
 type Service struct {
@@ -26,6 +28,26 @@ func NewService(userRepo UserRepository) rest.UserService {
 }
 
 func (s *Service) Create(ctx context.Context, user *domain.User) error {
+	userByEmail, err := s.userRepo.FindByEmail(ctx, user.Email)
+	if err != nil {
+		if err != repository.ErrNoRows {
+			return err
+		}
+	} else {
+		if userByEmail.Verified {
+			return errors.New("email_exists")
+		}
+
+		err := s.userRepo.Delete(ctx, userByEmail.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	if passLen := len(user.Password); passLen < 12 || passLen > 18 {
+		return errors.New("invalid_password_len")
+	}
+
 	hashed, err := hashPassword(user.Password)
 	if err != nil {
 		return err

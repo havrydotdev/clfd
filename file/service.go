@@ -22,6 +22,8 @@ var (
 
 type FileRepository interface {
 	Create(ctx context.Context, file *domain.File) error
+	FindByUser(ctx context.Context, userId int) ([]domain.File, error)
+	Delete(ctx context.Context, fileName string, userId int) error
 }
 
 type Service struct {
@@ -57,9 +59,24 @@ func (s *Service) Create(
 	file := domain.File{
 		Name:     fileName,
 		Location: fmt.Sprintf("%s/file/%s", url, fileName),
+		UserId:   userId,
 	}
 
 	return file, s.fileRepo.Create(ctx, &file)
+}
+
+func (s *Service) Delete(ctx context.Context, fileName string, userId int) error {
+	filePath := s.GetFileName(ctx, fileName, userId)
+	err := os.Remove(filePath)
+	if err != nil {
+		return err
+	}
+
+	return s.fileRepo.Delete(ctx, fileName, userId)
+}
+
+func (s *Service) FindByUser(ctx context.Context, userId int) ([]domain.File, error) {
+	return s.fileRepo.FindByUser(ctx, userId)
 }
 
 func (s *Service) GetFileName(ctx context.Context, fileName string, userId int) string {
