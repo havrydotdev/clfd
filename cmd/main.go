@@ -28,6 +28,8 @@ func init() {
 }
 
 func main() {
+	flag.Parse()
+
 	fx.New(
 		fx.Provide(
 			func() *echo.Echo {
