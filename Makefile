@@ -4,6 +4,9 @@ export
 run:
 	go run cmd/main.go
 
+build:
+	go build -o bin/clfd cmd/main.go
+
 pg-up:
 	podman run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=password -d docker.io/postgres:14
 
