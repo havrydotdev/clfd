@@ -12,8 +12,9 @@ import (
 
 type FileService interface {
 	Delete(ctx context.Context, fileName string, userId int) error
+	ReadGzip(ctx context.Context, filePath string) ([]byte, error)
 	FindByUser(ctx context.Context, userId int) ([]domain.File, error)
-	GetFileName(ctx context.Context, fileName string, userId int) string
+	GetFilePath(ctx context.Context, fileName string, userId int) string
 	Create(ctx context.Context, file *multipart.FileHeader, url string, userId int) (domain.File, error)
 }
 
@@ -93,12 +94,20 @@ func (h *FileHandler) Delete(c echo.Context) error {
 
 func (h *FileHandler) Download(c echo.Context) error {
 	ctx := c.Request().Context()
+	filePath := h.Service.GetFilePath(
+		ctx,
+		c.Param("fileName"),
+		c.Get("user").(*domain.User).ID,
+	)
 
-	return c.File(
-		h.Service.GetFileName(
-			ctx,
-			c.Param("fileName"),
-			c.Get("user").(*domain.User).ID,
-		),
+	content, err := h.Service.ReadGzip(ctx, filePath)
+	if err != nil {
+		return ErrorResp(http.StatusInternalServerError, err)
+	}
+
+	return c.Blob(
+		http.StatusOK,
+		"application/gzip",
+		content,
 	)
 }

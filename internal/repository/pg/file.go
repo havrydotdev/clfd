@@ -11,7 +11,7 @@ import (
 const (
 	insertFileQuery = "INSERT INTO files (name, location, user_id) VALUES ($1, $2, $3) RETURNING id, created_at, updated_at"
 	deleteFileQuery = "DELETE FROM files WHERE name = $1 AND user_id = $2"
-	findFilesByUser = "SELECT id, name, location, updated_at, created_at, user_id FROM files WHERE user_id = $1"
+	findFilesByUser = "SELECT * FROM files WHERE user_id = $1"
 )
 
 type FileRepository struct {

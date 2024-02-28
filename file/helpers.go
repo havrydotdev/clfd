@@ -1,6 +1,7 @@
 package file
 
 import (
+	"compress/gzip"
 	"io"
 	"mime/multipart"
 	"os"
@@ -19,7 +20,10 @@ func SaveFile(file *multipart.FileHeader, path string) error {
 	}
 	defer dst.Close()
 
-	if _, err := io.Copy(dst, src); err != nil {
+	w := gzip.NewWriter(dst)
+	defer w.Close()
+
+	if _, err := io.Copy(w, src); err != nil {
 		return err
 	}
 

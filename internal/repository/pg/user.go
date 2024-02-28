@@ -14,8 +14,8 @@ import (
 // TODO: refactor queries to use * instead of all fields
 const (
 	insertUserQuery      = "INSERT INTO users (email, password, verif_code) VALUES ($1, $2, $3) RETURNING id"
-	findUserByEmailQuery = "SELECT id, email, password, refresh_token, verified, verif_code FROM users WHERE email = $1"
-	findUserByIdQuery    = "SELECT id, email, password, refresh_token, verified, verif_code FROM users WHERE id = $1"
+	findUserByEmailQuery = "SELECT * FROM users WHERE email = $1"
+	findUserByIdQuery    = "SELECT * FROM users WHERE id = $1"
 	deleteUserQuery      = "DELETE FROM users WHERE id = $1"
 )
 

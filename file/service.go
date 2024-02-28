@@ -7,8 +7,8 @@ import (
 	"mime/multipart"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/clfdrive/server/domain"
 	"github.com/clfdrive/server/internal/rest"
@@ -42,10 +42,10 @@ func (s *Service) Create(
 	url string,
 	userId int,
 ) (domain.File, error) {
-	parts := strings.Split(upload.Filename, ".")
-	fileName := fmt.Sprintf("%s.%s", uuid.NewString(), parts[len(parts)-1])
+	ext := filepath.Ext(upload.Filename)
+	fileName := uuid.NewString() + ext
+	filePath := s.GetFilePath(ctx, fileName, userId)
 
-	filePath := s.GetFileName(ctx, fileName, userId)
 	dirPath := path.Dir(filePath)
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 		os.Mkdir(dirPath, fs.ModePerm)
@@ -66,7 +66,7 @@ func (s *Service) Create(
 }
 
 func (s *Service) Delete(ctx context.Context, fileName string, userId int) error {
-	filePath := s.GetFileName(ctx, fileName, userId)
+	filePath := s.GetFilePath(ctx, fileName, userId)
 	err := os.Remove(filePath)
 	if err != nil {
 		return err
@@ -79,10 +79,14 @@ func (s *Service) FindByUser(ctx context.Context, userId int) ([]domain.File, er
 	return s.fileRepo.FindByUser(ctx, userId)
 }
 
-func (s *Service) GetFileName(ctx context.Context, fileName string, userId int) string {
+func (s *Service) GetFilePath(ctx context.Context, fileName string, userId int) string {
 	return path.Join(
 		driveDir,
 		strconv.Itoa(userId),
-		fileName,
+		fileName+".gz",
 	)
+}
+
+func (s *Service) ReadGzip(ctx context.Context, filePath string) ([]byte, error) {
+	return os.ReadFile(filePath)
 }

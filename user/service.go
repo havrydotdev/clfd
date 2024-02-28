@@ -70,12 +70,15 @@ func (s *Service) Verify(ctx context.Context, email string, verifCode string) er
 		return err
 	}
 
+	if user.Verified {
+		return errors.New("already_verified")
+	}
+
 	if user.VerifCode != verifCode {
 		return errors.New("incorrect_verif_code")
 	}
 
 	verified := true
-
 	if err := s.userRepo.Update(ctx, user.ID, &domain.UpdateUserDTO{
 		Verified: &verified,
 	}); err != nil {
