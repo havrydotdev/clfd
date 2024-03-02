@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -25,6 +26,9 @@ type ProtectedRouter struct {
 
 func NewProtectedRouter(srv *echo.Echo, userSvc UserService) *ProtectedRouter {
 	jwtConfig := echojwt.Config{
+		BeforeFunc: func(c echo.Context) {
+			fmt.Println(c.Request().Header.Get("Authorization"))
+		},
 		SuccessHandler: func(c echo.Context) {
 			token := c.Get("token").(*jwt.Token)
 			claims := token.Claims.(*AccessTokenClaims)

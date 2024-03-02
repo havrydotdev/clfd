@@ -19,8 +19,7 @@ import (
 )
 
 var (
-	table     = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
-	jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+	table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 
 	rsaPrivateKeyRaw, _ = os.ReadFile("secrets/refresh.key")
 	rsaPrivateKey, _    = jwt.ParseRSAPrivateKeyFromPEM(rsaPrivateKeyRaw)
@@ -48,8 +47,6 @@ func parseRefreshToken(refreshToken string) (int, error) {
 		return -1, err
 	}
 
-	fmt.Println(token.Claims.(*rest.AccessTokenClaims).UserId)
-
 	return token.Claims.(*rest.AccessTokenClaims).UserId, nil
 }
 
@@ -63,7 +60,7 @@ func GenerateTokenPair(userId int) (string, string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	t, err := token.SignedString(jwtSecret)
+	t, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
 		return "", "", err
 	}

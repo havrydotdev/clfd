@@ -10,8 +10,7 @@ import (
 )
 
 type AccessTokenClaims struct {
-	UserId      int  `json:"user_id"`
-	AccessToken bool `json:"access_token"`
+	UserId int `json:"user_id"`
 	jwt.RegisteredClaims
 }
 

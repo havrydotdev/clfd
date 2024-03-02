@@ -21,3 +21,6 @@ down:
 
 up:
 	migrate -path ./schema -database $${DATABASE_URL} up
+
+keygen:
+	ssh-keygen -t rsa -P "" -b 2048 -m PEM -f secrets/refresh.key
