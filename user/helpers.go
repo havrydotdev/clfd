@@ -82,17 +82,11 @@ func GenerateTokenPair(userId int) (string, string, error) {
 func sendEmail(email, code string) error {
 	from := os.Getenv("EMAIL")
 	password := os.Getenv("EMAIL_PASSWORD")
-
-	// Receiver email address.
 	to := []string{
 		email,
 	}
-
-	// smtp server configuration.
 	smtpHost := "smtp.gmail.com"
 	smtpPort := "587"
-
-	// Authentication.
 	auth := smtp.PlainAuth("", from, password, smtpHost)
 
 	t, err := template.ParseFiles(path.Join("static", "index.html"))
@@ -112,7 +106,6 @@ func sendEmail(email, code string) error {
 		Code: code,
 	})
 
-	// Sending email.
 	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, body.Bytes())
 	if err != nil {
 		log.Println(err)

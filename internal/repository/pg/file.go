@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	insertFileQuery = "INSERT INTO files (name, location, user_id) VALUES ($1, $2, $3) RETURNING id, created_at, updated_at"
-	deleteFileQuery = "DELETE FROM files WHERE name = $1 AND user_id = $2"
+	insertFileQuery = "INSERT INTO files (name, original_name, location, user_id) VALUES ($1, $2, $3, $4) RETURNING id, created_at, updated_at"
+	deleteFileQuery = "DELETE FROM files WHERE original_name = $1 AND user_id = $2"
 	findFilesByUser = "SELECT * FROM files WHERE user_id = $1"
 )
 
@@ -25,7 +25,7 @@ func NewFileRepository(conn *pgx.Conn) file.FileRepository {
 }
 
 func (repo *FileRepository) Create(ctx context.Context, file *domain.File) (err error) {
-	row := repo.conn.QueryRow(ctx, insertFileQuery, file.Name, file.Location, file.UserId)
+	row := repo.conn.QueryRow(ctx, insertFileQuery, file.Name, file.OriginalName, file.Location, file.UserId)
 	if err = row.Scan(&file.ID, &file.CreatedAt, &file.UpdatedAt); err != nil {
 		return
 	}
@@ -41,6 +41,7 @@ func (repo *FileRepository) FindByUser(ctx context.Context, userId int) ([]domai
 		err := rows.Scan(
 			&file.ID,
 			&file.Name,
+			&file.OriginalName,
 			&file.Location,
 			&file.UpdatedAt,
 			&file.CreatedAt,
@@ -56,8 +57,8 @@ func (repo *FileRepository) FindByUser(ctx context.Context, userId int) ([]domai
 	return files, rows.Err()
 }
 
-func (repo *FileRepository) Delete(ctx context.Context, fileName string, userId int) (err error) {
-	row := repo.conn.QueryRow(ctx, deleteFileQuery, fileName, userId)
+func (repo *FileRepository) Delete(ctx context.Context, originalName string, userId int) (err error) {
+	row := repo.conn.QueryRow(ctx, deleteFileQuery, originalName, userId)
 	if err = row.Scan(); err != nil && err != pgx.ErrNoRows {
 		return
 	}

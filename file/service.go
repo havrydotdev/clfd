@@ -57,9 +57,10 @@ func (s *Service) Create(
 	}
 
 	file := domain.File{
-		Name:     fileName,
-		Location: fmt.Sprintf("%s/file/%s", url, fileName),
-		UserId:   userId,
+		Name:         fileName,
+		OriginalName: upload.Filename,
+		Location:     fmt.Sprintf("%s/file/%s", url, fileName),
+		UserId:       userId,
 	}
 
 	return file, s.fileRepo.Create(ctx, &file)
